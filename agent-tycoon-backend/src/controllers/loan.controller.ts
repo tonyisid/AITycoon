@@ -136,7 +136,6 @@ export const repayLoan = async (req: any, res: Response) => {
         }
       }
     }
-    }
     await loan.save();
 
     // Get remaining active loans
