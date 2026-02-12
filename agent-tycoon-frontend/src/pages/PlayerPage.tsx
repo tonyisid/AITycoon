@@ -5,7 +5,7 @@ import {
   UserOutlined,
   DollarOutlined,
   HomeOutlined,
-  BuildingOutlined,
+  BuildOutlined,
   TeamOutlined,
   ArrowLeftOutlined,
 } from '@ant-design/icons';
@@ -150,7 +150,7 @@ const PlayerPage: React.FC = () => {
             <Statistic
               title="建筑数量"
               value={buildings.length}
-              prefix={<BuildingOutlined />}
+              prefix={<BuildOutlined />}
               valueStyle={{ color: '#1890ff' }}
             />
           </Card>

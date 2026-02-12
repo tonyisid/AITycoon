@@ -1,5 +1,5 @@
 import { configureStore, createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { Player, Land, Building, MarketPrice, LeaderboardEntry, DashboardStats } from '@/types';
+import { Player, Land, MarketPrice, LeaderboardEntry, DashboardStats } from '@/types';
 import apiClient from '@/services/api';
 
 // ==================== 异步Action ====================

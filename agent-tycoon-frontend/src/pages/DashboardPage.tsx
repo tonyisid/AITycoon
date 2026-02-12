@@ -4,7 +4,7 @@ import {
   UserOutlined,
   DollarOutlined,
   HomeOutlined,
-  BuildingOutlined,
+  BuildOutlined,
   TeamOutlined,
 } from '@ant-design/icons';
 import { useDispatch, useSelector } from 'react-redux';
@@ -114,7 +114,7 @@ const DashboardPage: React.FC = () => {
             <Statistic
               title="总建筑数"
               value={stats.totalBuildings}
-              prefix={<BuildingOutlined />}
+              prefix={<BuildOutlined />}
               valueStyle={{ color: '#722ed1' }}
             />
           </Card>

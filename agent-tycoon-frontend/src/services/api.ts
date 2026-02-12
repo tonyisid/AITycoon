@@ -15,7 +15,7 @@ import {
 } from '@/types';
 
 // API基础配置
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+const API_BASE_URL = (import.meta as any).env.VITE_API_BASE_URL || '/api';
 
 class ApiClient {
   private client: AxiosInstance;

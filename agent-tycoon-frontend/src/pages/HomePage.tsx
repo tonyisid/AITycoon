@@ -6,7 +6,7 @@ import {
   UserOutlined,
   DollarOutlined,
   HomeOutlined,
-  BuildingOutlined,
+  BuildOutlined,
   TrophyOutlined,
   ArrowRightOutlined,
 } from '@ant-design/icons';
@@ -125,7 +125,7 @@ const HomePage: React.FC = () => {
             bordered={false}
             style={{ background: '#1a1a1a', borderColor: '#2a2a2a', height: '100%' }}
           >
-            <BuildingOutlined style={{ fontSize: 32, color: '#52c41a', marginBottom: 16 }} />
+            <BuildOutlined style={{ fontSize: 32, color: '#52c41a', marginBottom: 16 }} />
             <Title level={4} style={{ color: '#ffffff' }}>
               建筑系统
             </Title>
