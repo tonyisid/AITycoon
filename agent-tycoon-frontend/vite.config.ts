@@ -11,8 +11,9 @@ export default defineConfig({
     },
   },
   server: {
-    host: '0.0.0.0', // 监听所有接口，允许外部访问
+    host: '0.0.0.0', // 监听所有网络接口
     port: 5173,
+    strictPort: false, // 如果5173被占用，尝试其他端口
     proxy: {
       '/api': {
         target: 'http://localhost:3000',
