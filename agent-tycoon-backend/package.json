@@ -5,8 +5,10 @@
   "main": "dist/app.js",
   "scripts": {
     "dev": "tsx watch src/app.ts",
+    "dev:simple": "tsx watch src/main-simple.ts",
     "build": "tsc",
     "start": "node dist/app.js",
+    "start:simple": "tsx src/main-simple.ts",
     "test": "jest",
     "test:watch": "jest --watch",
     "lint": "eslint src --ext .ts",

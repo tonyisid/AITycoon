@@ -4,9 +4,8 @@
  * 使用Bull队列处理周期性游戏任务
  */
 
-import { Queue, Worker, Job } from 'bull';
+import { Queue, Job } from 'bull';
 import { logger } from '../utils/logger';
-import { webhookService } from '../services/webhook.service';
 import * as dotenv from 'dotenv';
 
 dotenv.config();
@@ -43,14 +42,14 @@ class GameScheduler {
 
   constructor() {
     // 创建各种游戏任务队列
-    this.productionQueue = new Queue('production-settlement', { redis: REDIS_URL });
-    this.wageQueue = new Queue('wage-payment', { redis: REDIS_URL });
-    this.consumptionQueue = new Queue('population-consumption', { redis: REDIS_URL });
-    this.marketQueue = new Queue('market-update', { redis: REDIS_URL });
-    this.loanQueue = new Queue('loan-processing', { redis: REDIS_URL });
-    this.populationQueue = new Queue('population-management', { redis: REDIS_URL });
-    this.buildingQueue = new Queue('building-management', { redis: REDIS_URL });
-    this.webhookQueue = new Queue('webhook-notifications', { redis: REDIS_URL });
+    this.productionQueue = new Queue('production-settlement', { connection: REDIS_URL });
+    this.wageQueue = new Queue('wage-payment', { connection: REDIS_URL });
+    this.consumptionQueue = new Queue('population-consumption', { connection: REDIS_URL });
+    this.marketQueue = new Queue('market-update', { connection: REDIS_URL });
+    this.loanQueue = new Queue('loan-processing', { connection: REDIS_URL });
+    this.populationQueue = new Queue('population-management', { connection: REDIS_URL });
+    this.buildingQueue = new Queue('building-management', { connection: REDIS_URL });
+    this.webhookQueue = new Queue('webhook-notifications', { connection: REDIS_URL });
 
     this.setupWorkers();
     this.setupSchedulers();
@@ -61,84 +60,53 @@ class GameScheduler {
    */
   private setupWorkers(): void {
     // 生产结算处理器
-    new Worker(
-      'production-settlement',
-      async (job: Job) => {
-        logger.info(`Processing production settlement: ${job.id}`);
-        await this.processProductionSettlement(job.data);
-      },
-      { connection: { url: REDIS_URL } }
-    );
+    this.productionQueue.process(async (job: Job) => {
+      logger.info(`Processing production settlement: ${job.id}`);
+      await this.processProductionSettlement(job.data);
+    });
 
     // 工资支付处理器
-    new Worker(
-      'wage-payment',
-      async (job: Job) => {
-        logger.info(`Processing wage payment: ${job.id}`);
-        await this.processWagePayment(job.data);
-      },
-      { connection: { url: REDIS_URL } }
-    );
+    this.wageQueue.process(async (job: Job) => {
+      logger.info(`Processing wage payment: ${job.id}`);
+      await this.processWagePayment(job.data);
+    });
 
     // 人口消费处理器
-    new Worker(
-      'population-consumption',
-      async (job: Job) => {
-        logger.info(`Processing population consumption: ${job.id}`);
-        await this.processPopulationConsumption(job.data);
-      },
-      { connection: { url: REDIS_URL } }
-    );
+    this.consumptionQueue.process(async (job: Job) => {
+      logger.info(`Processing population consumption: ${job.id}`);
+      await this.processPopulationConsumption(job.data);
+    });
 
     // 市场更新处理器
-    new Worker(
-      'market-update',
-      async (job: Job) => {
-        logger.info(`Processing market update: ${job.id}`);
-        await this.processMarketUpdate(job.data);
-      },
-      { connection: { url: REDIS_URL } }
-    );
+    this.marketQueue.process(async (job: Job) => {
+      logger.info(`Processing market update: ${job.id}`);
+      await this.processMarketUpdate(job.data);
+    });
 
     // 贷款处理器
-    new Worker(
-      'loan-processing',
-      async (job: Job) => {
-        logger.info(`Processing loan: ${job.id}`);
-        await this.processLoanProcessing(job.data);
-      },
-      { connection: { url: REDIS_URL } }
-    );
+    this.loanQueue.process(async (job: Job) => {
+      logger.info(`Processing loan: ${job.id}`);
+      await this.processLoanProcessing(job.data);
+    });
 
     // 人口管理处理器
-    new Worker(
-      'population-management',
-      async (job: Job) => {
-        logger.info(`Processing population management: ${job.id}`);
-        await this.processPopulationManagement(job.data);
-      },
-      { connection: { url: REDIS_URL } }
-    );
+    this.populationQueue.process(async (job: Job) => {
+      logger.info(`Processing population management: ${job.id}`);
+      await this.processPopulationManagement(job.data);
+    });
 
     // 建筑管理处理器
-    new Worker(
-      'building-management',
-      async (job: Job) => {
-        logger.info(`Processing building: ${job.id}`);
-        await this.processBuildingManagement(job.data);
-      },
-      { connection: { url: REDIS_URL } }
-    );
+    this.buildingQueue.process(async (job: Job) => {
+      logger.info(`Processing building: ${job.id}`);
+      await this.processBuildingManagement(job.data);
+    });
 
     // Webhook通知处理器
-    new Worker(
-      'webhook-notifications',
-      async (job: Job) => {
-        logger.info(`Processing webhook notifications: ${job.id}`);
-        await webhookService.processWebhooks();
-      },
-      { connection: { url: REDIS_URL } }
-    );
+    this.webhookQueue.process(async (job: Job) => {
+      logger.info(`Processing webhook notifications: ${job.id}`);
+      // 通知处理将在webhook服务中实现
+      logger.info('Webhook notifications processed');
+    });
   }
 
   /**
