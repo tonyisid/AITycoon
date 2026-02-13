@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Agent大亨 - 测试页面</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; background: #0f0f0f; color: #fff; line-height: 1.6; }
+    .container { max-width: 1200px; margin: 50px auto; padding: 20px; }
+    .status { padding: 10px 20px; border-radius: 8px; margin: 10px 0; }
+    .success { background: #52c41a; }
+    .error { background: #ff4d4f; }
+    h1 { color: #1890ff; }
+    h2 { color: #52c41a; }
+    code { background: #1a1a1a; padding: 10px; border-radius: 4px; display: inline-block; }
+    pre { background: #1a1a1a; padding: 15px; border-radius: 8px; overflow-x: auto; }
+    .test-btn { padding: 12px 24px; font-size: 16px; background: #1890ff; color: white; border: none; border-radius: 6px; cursor: pointer; }
+    .test-btn:hover { background: #40a9ff; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎮 AI Agent大亨：经济战场</h1>
+    <p>系统测试页面</p>
+    
+    <div id="frontend-status">
+      <h2>前端状态</h2>
+      <p>正在检测...</p>
+    </div>
+
+    <div id="backend-status">
+      <h2>后端状态</h2>
+      <p>正在检测...</p>
+    </div>
+
+    <div id="network-status">
+      <h2>网络连通性</h2>
+      <p>正在检测...</p>
+    </div>
+
+    <div class="actions">
+      <button class="test-btn" onclick="testFrontend()">测试前端</button>
+      <button class="test-btn" onclick="testBackend()">测试后端</button>
+      <button class="test-btn" onclick="testAll()">全面测试</button>
+    </div>
+
+    <div id="results"></div>
+  </div>
+
+  <script>
+    const API_BASE = 'http://43.156.102.103:3000';
+    const FRONTEND_URL = 'http://43.156.102.103:5173';
+
+    async function testFrontend() {
+      const status = document.getElementById('frontend-status');
+      try {
+        const response = await fetch(FRONTEND_URL);
+        if (response.ok) {
+          status.className = 'status success';
+          status.innerHTML = '<h2>✅ 前端正常</h2><p>可以访问</p>';
+        } else {
+          throw new Error('Frontend returned ' + response.status);
+        }
+      } catch (error) {
+        status.className = 'status error';
+        status.innerHTML = '<h2>❌ 前端无法访问</h2><p>' + error.message;
+      }
+    }
+
+    async function testBackend() {
+      const status = document.getElementById('backend-status');
+      try {
+        const response = await fetch(API_BASE + '/health');
+        if (response.ok) {
+          const data = await response.json();
+          status.className = 'status success';
+          status.innerHTML = '<h2>✅ 后端正常</h2><p>可以访问</p>';
+          status.innerHTML += '<p>环境: ' + data.environment + '</p>';
+          status.innerHTML += '<p>版本: ' + data.version + '</p>';
+        } else {
+          throw new Error('Backend returned ' + response.status);
+        }
+      } catch (error) {
+        status.className = 'status error';
+        status.innerHTML = '<h2>❌ 后端无法访问</h2><p>' + error.message;
+      }
+    }
+
+    async function testNetwork() {
+      const status = document.getElementById('network-status');
+      try {
+        // 测试前端
+        const frontCheck = await fetch(FRONTEND_URL);
+        // 测试后端
+        const backCheck = await fetch(API_BASE + '/health');
+        
+        if (frontCheck.ok && backCheck.ok) {
+          status.className = 'status success';
+          status.innerHTML = '<h2>✅ 网络正常</h2><p>可以访问前端和后端</p>';
+        } else {
+          status.className = 'status error';
+          status.innerHTML = '<h2>⚠️ 网络异常</h2><p>前端状态: ' + frontCheck.status + '</p>';
+        }
+      } catch (error) {
+        status.className = 'status error';
+        status.innerHTML = '<h2>⚠️ 网络异常</h2><p>' + error.message;
+      }
+    }
+
+    function addResult(message: string) {
+      const results = document.getElementById('results');
+      const p = document.createElement('p');
+      p.textContent = message;
+      results.appendChild(p);
+    }
+
+    async function testAll() {
+      addResult('开始全面测试...');
+      await testFrontend();
+      await testBackend();
+      await testNetwork();
+      addResult('测试完成！');
+    }
+
+    // 自动运行测试
+    window.onload = async () => {
+      await testAll();
+    };
+  </script>
+</body>
+</html>
