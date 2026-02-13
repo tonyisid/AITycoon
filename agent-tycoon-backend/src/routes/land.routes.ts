@@ -1,35 +1,44 @@
-import { Router, Request, Response } from 'express';
-import { getLands, purchaseLand, getAuctions } from '../controllers/land.controller';
-import { authenticateToken } from '../middleware/auth.middleware';
+/**
+ * Land Routes
+ */
+
+import { Router } from 'express';
+import * as LandController from '../controllers/land.controller';
+import { authMiddleware } from '../middleware/auth.middleware.v2';
 
 const router = Router();
 
 // All routes require authentication
-router.use(authenticateToken);
+router.use(authMiddleware);
 
 /**
- * @route   GET /api/v1/land
- * @desc    Get all available lands
+ * @route   GET /api/v1/lands
+ * @desc    List available lands with filters
  * @access  Private
- * @returns { success, lands }
+ * @query    landType, minLocation, maxLocation, page, pageSize
  */
-router.get('/', getLands);
+router.get('/', LandController.listLands);
 
 /**
- * @route   POST /api/v1/land/purchase
- * @desc    Purchase a land
+ * @route   GET /api/v1/lands/:landId
+ * @desc    Get land details
  * @access  Private
- * @body    { land_id, bid_price }
- * @returns { success, land_id, price_paid }
  */
-router.post('/purchase', purchaseLand);
+router.get('/:landId', LandController.getLand);
 
 /**
- * @route   GET /api/v1/land/auctions
- * @desc    Get all ongoing auctions
+ * @route   POST /api/v1/lands/:landId/purchase
+ * @desc    Purchase land
  * @access  Private
- * @returns { success, auctions }
  */
-router.get('/auctions', getAuctions);
+router.post('/:landId/purchase', LandController.purchaseLand);
+
+/**
+ * @route   POST /api/v1/lands/:landId/auction
+ * @desc    Create auction for land
+ * @access  Private
+ * @body    { startPrice }
+ */
+router.post('/:landId/auction', LandController.createAuction);
 
 export default router;

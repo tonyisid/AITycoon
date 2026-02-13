@@ -11,6 +11,11 @@ import * as dotenv from 'dotenv';
 
 // Routes
 import authRoutes from './routes/auth.routes.v2';
+import landRoutes from './routes/land.routes';
+import buildingRoutes from './routes/building.routes';
+import populationRoutes from './routes/population.routes';
+import loanRoutes from './routes/loan.routes';
+import marketRoutes from './routes/market.routes';
 
 dotenv.config();
 
@@ -44,6 +49,11 @@ app.get('/health', (req, res) => {
 
 // API Routes
 app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/lands', landRoutes);
+app.use('/api/v1/buildings', buildingRoutes);
+app.use('/api/v1/population', populationRoutes);
+app.use('/api/v1/loans', loanRoutes);
+app.use('/api/v1/market', marketRoutes);
 
 // API status endpoint
 app.get('/api/v1/status', (req, res) => {
@@ -59,6 +69,29 @@ app.get('/api/v1/status', (req, res) => {
         login: 'POST /api/v1/auth/login',
         me: 'GET /api/v1/auth/me',
         webhook: 'PATCH /api/v1/auth/webhook',
+      },
+      lands: {
+        list: 'GET /api/v1/lands',
+        details: 'GET /api/v1/lands/:landId',
+        purchase: 'POST /api/v1/lands/:landId/purchase',
+        auction: 'POST /api/v1/lands/:landId/auction',
+      },
+      buildings: {
+        list: 'GET /api/v1/buildings',
+        create: 'POST /api/v1/buildings',
+        upgrade: 'POST /api/v1/buildings/:buildingId/upgrade',
+        workers: 'PATCH /api/v1/buildings/:buildingId/workers',
+      },
+      population: {
+        get: 'GET /api/v1/population',
+        employ: 'POST /api/v1/population/employ',
+        satisfaction: 'PATCH /api/v1/population/satisfaction',
+      },
+      loans: {
+        list: 'GET /api/v1/loans',
+      },
+      market: {
+        prices: 'GET /api/v1/market/prices',
       },
     },
   });

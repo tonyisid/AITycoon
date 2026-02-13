@@ -1,225 +1,107 @@
-import { Response } from 'express';
-import { Population } from '../models/Population';
-import { Player } from '../models/Player';
-import { Building } from '../models/Building';
-import { AppError } from '../middleware/errorHandler.middleware';
+/**
+ * Population Controller
+ */
+
+import { Request, Response } from 'express';
 import { logger } from '../utils/logger';
-import CONSTANTS from '../utils/constants';
+import * as PopulationDAO from '../models/population.dao';
 
 /**
- * Get population status
- * @route   GET /api/v1/population
- * @access  Private
+ * Get population data
  */
-export const getPopulationStatus = async (req: any, res: Response) => {
+export async function getPopulation(req: Request, res: Response): Promise<void> {
   try {
-    const { playerId } = req.player;
-
-    // Get player's population
-    const population = await Population.findOne({ where: { playerId } });
+    const playerId = (req as any).playerId;
+    const population = await PopulationDAO.getPopulationByPlayerId(playerId);
 
     if (!population) {
-      throw new AppError(CONSTANTS.ERROR_MESSAGES.POPULATION_NOT_FOUND, 404);
+      res.status(404).json({
+        success: false,
+        message: 'Population not found',
+      });
+      return;
     }
-
-    logger.info(`Population status retrieved for player ${playerId}`);
 
     res.json({
       success: true,
-      population_info: {
-        total_population: population.totalPopulation,
-        employed_population: population.employedPopulation,
-        unemployed_population: population.unemployedPopulation,
-        satisfaction_level: population.satisfactionLevel,
-        growth_rate: population.growthRate,
-        daily_food_consumption: population.dailyFoodConsumption,
-        daily_clothing_consumption: population.dailyClothingConsumption,
-        daily_housing_consumption: population.dailyHousingConsumption,
-        daily_entertainment_consumption: population.dailyEntertainmentConsumption
-      }
+      data: population,
     });
   } catch (error) {
-    logger.error('Get population status error:', error);
-    throw error;
+    logger.error('Get population error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get population',
+    });
   }
-};
+}
 
 /**
- * Employ workers
- * @route   POST /api/v1/population/employ
- * @access  Private
+ * Employ population
  */
-export const employWorkers = async (req: any, res: Response) => {
+export async function employPopulation(req: Request, res: Response): Promise<void> {
   try {
-    const { playerId } = req.player;
-    const { building_id, worker_count, wage } = req.body;
+    const playerId = (req as any).playerId;
+    const { count } = req.body;
 
-    // Validate input
-    if (!building_id || !worker_count || !wage) {
-      throw new AppError('building_id, worker_count, and wage are required', 400);
-    }
+    const population = await PopulationDAO.employPopulation(playerId, count);
 
-    // Find building
-    const building = await Building.findOne({ where: { buildingId: building_id, ownerId: playerId } });
-
-    if (!building) {
-      throw new AppError(CONSTANTS.ERROR_MESSAGES.BUILDING_NOT_FOUND, 404);
-    }
-
-    // Find player
-    const player = await Player.findOne({ where: { id: playerId } });
-
-    if (!player) {
-      throw new AppError(CONSTANTS.ERROR_MESSAGES.PLAYER_NOT_FOUND, 404);
-    }
-
-    // Find population
-    const population = await Population.findOne({ where: { playerId } });
-
-    if (!population) {
-      throw new AppError(CONSTANTS.ERROR_MESSAGES.POPULATION_NOT_FOUND, 404);
-    }
-
-    // Check if enough unemployed workers
-    if (population.unemployedPopulation < worker_count) {
-      throw new AppError('Not enough unemployed workers', 400);
-    }
-
-    // Calculate production efficiency gain
-    const baseWorkers = getBaseWorkerRequirement(building.buildingType);
-    const efficiencyGain = calculateEfficiencyGain(worker_count, baseWorkers, building.buildingType);
-
-    // Update building
-    building.workerCount += worker_count;
-    building.productionEfficiency += efficiencyGain;
-    await building.save();
-
-    // Update population
-    population.employedPopulation += worker_count;
-    population.unemployedPopulation -= worker_count;
-    await population.save();
-
-    // Calculate daily wage cost
-    const dailyWageCost = worker_count * wage;
-
-    logger.info(`Workers employed: ${worker_count} at building ${building_id} by ${player.agentName}`);
+    logger.info(`Player ${playerId} employed ${count} population`);
 
     res.json({
       success: true,
-      building_id: building_id,
-      workers_added: worker_count,
-      total_workers: building.workerCount,
-      daily_wage_cost,
-      production_efficiency: building.productionEfficiency
+      data: {
+        employed: population.employed_population,
+        unemployed: population.unemployed_population,
+        total: population.total_population,
+      },
+      message: 'Population employed successfully',
     });
   } catch (error) {
-    logger.error('Employ workers error:', error);
-    throw error;
+    logger.error('Employ population error:', error);
+    
+    if (error.message === 'Not enough unemployed population') {
+      res.status(400).json({
+        success: false,
+        message: 'Not enough unemployed population',
+      });
+      return;
+    }
+
+    res.status(500).json({
+      success: false,
+      message: 'Failed to employ population',
+    });
   }
-};
+}
 
 /**
- * Fire workers
- * @route   POST /api/v1/population/fire
- * @access  Private
+ * Update satisfaction
  */
-export const fireWorkers = async (req: any, res: Response) => {
+export async function updateSatisfaction(req: Request, res: Response): Promise<void> {
   try {
-    const { playerId } = req.player;
-    const { building_id, worker_count } = req.body;
+    const playerId = (req as any).playerId;
+    const { satisfactionLevel } = req.body;
 
-    // Validate input
-    if (!building_id || !worker_count) {
-      throw new AppError('building_id and worker_count are required', 400);
-    }
+    const population = await PopulationDAO.updateSatisfaction(playerId, satisfactionLevel);
 
-    // Find building
-    const building = await Building.findOne({ where: { buildingId: building_id, ownerId: playerId } });
-
-    if (!building) {
-      throw new AppError(CONSTANTS.ERROR_MESSAGES.BUILDING_NOT_FOUND, 404);
-    }
-
-    // Check if enough workers
-    if (building.workerCount < worker_count) {
-      throw new AppError('Not enough workers to fire', 400);
-    }
-
-    // Find population
-    const population = await Population.findOne({ where: { playerId } });
-
-    if (!population) {
-      throw new AppError(CONSTANTS.ERROR_MESSAGES.POPULATION_NOT_FOUND, 404);
-    }
-
-    // Calculate production efficiency loss
-    const baseWorkers = getBaseWorkerRequirement(building.buildingType);
-    const efficiencyLoss = calculateEfficiencyLoss(worker_count, baseWorkers, building.buildingType);
-
-    // Update building
-    building.workerCount -= worker_count;
-    building.productionEfficiency -= efficiencyLoss;
-    await building.save();
-
-    // Update population
-    population.employedPopulation -= worker_count;
-    population.unemployedPopulation += worker_count;
-    await population.save();
-
-    logger.info(`Workers fired: ${worker_count} from building ${building_id} by ${player.agentName}`);
+    logger.info(`Player ${playerId} satisfaction updated to ${satisfactionLevel}`);
 
     res.json({
       success: true,
-      building_id: building_id,
-      workers_removed: worker_count,
-      total_workers: building.workerCount,
-      production_efficiency: building.productionEfficiency
+      data: population,
+      message: 'Satisfaction updated successfully',
     });
   } catch (error) {
-    logger.error('Fire workers error:', error);
-    throw error;
+    logger.error('Update satisfaction error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update satisfaction',
+    });
   }
+}
+
+export default {
+  getPopulation,
+  employPopulation,
+  updateSatisfaction,
 };
-
-// Helper functions
-function getBaseWorkerRequirement(buildingType: string): number {
-  const workerMap: { [key: string]: number } = {
-    agriculture: 10,
-    mining: 10,
-    forestry: 10,
-    fishery: 10,
-    food_processing: 20,
-    machinery_manufacturing: 20,
-    textile_clothing: 20,
-    chemical: 20,
-    software_development: 5,
-    retail_commerce: 5,
-    education_training: 5,
-    medical_healthcare: 5,
-    entertainment_culture: 5,
-    energy_electricity: 15
-  };
-
-  return workerMap[buildingType] || 10;
-}
-
-function calculateEfficiencyGain(workerCount: number, baseWorkers: number, buildingType: string): number {
-  const efficiencyMultiplier = getEfficiencyMultiplier(buildingType);
-  return (workerCount / baseWorkers) * efficiencyMultiplier;
-}
-
-function calculateEfficiencyLoss(workerCount: number, baseWorkers: number, buildingType: string): number {
-  const efficiencyMultiplier = getEfficiencyMultiplier(buildingType);
-  return (workerCount / baseWorkers) * efficiencyMultiplier;
-}
-
-function getEfficiencyMultiplier(buildingType: string): number {
-  if (CONSTANTS.PRIMARY_INDUSTRIES.includes(buildingType)) {
-    return 0.0; // No efficiency bonus for primary industries
-  } else if (CONSTANTS.SECONDARY_INDUSTRIES.includes(buildingType)) {
-    return 0.2; // 20% efficiency bonus for secondary industries
-  } else if (CONSTANTS.TERTIARY_INDUSTRIES.includes(buildingType)) {
-    return 0.5; // 50% efficiency bonus for tertiary industries
-  }
-  return 0.0;
-}
